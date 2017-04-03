@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Chat Window</title>
+        <meta charset="utf-8">
+		<style>
+            form { background: #000; padding: 3px; position: fixed; bottom: 0; width: 100%; }
+            form input { border: 0; padding: 10px; width: 90%; margin-right: 0.25%; }
+            form button { width: 7.5%; background: rgb(130, 224, 255); border: none; padding: 10px; margin-right: 0.25%; }
+        </style>
+    </head>
+    <body>
+        <h1>Chat Window</h1>
+        <input type="text" id="usernameField">
+        <button id="usernameButton" onclick="usernameButtonClicked()">Enter Username</button>
+        <p></p>
+        <p id="chat">No message yet.</p>
+		<form id = "formData" action ="">
+			<input type="text" id="text">
+            <button>Send</button>
+		</form>
+        <script src="/socket.io/socket.io.js"></script>
+        <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1/jquery.min.js"></script>
+        <script>
+            var socket = io.connect();
+            var username = "";
+            
+            window.addEventListener("keydown", checkKeysDown, false);
+            
+            function checkKeysDown(event) {
+                var keyPressed = event.keyCode;
+                if (document.getElementById("text").value != "" && username != "") {
+                    socket.emit("userTyping", username);
+                }
+            }
+            
+            function usernameButtonClicked() {
+				if (document.getElementById("usernameButton").innerHTML == "Enter Username") {
+					if (document.getElementById("usernameField").value == "") {
+						console.log("pick a username before entering the chat!");
+					}
+					else {
+						document.getElementById("usernameButton").innerHTML = "Exit Chat";
+                        username = document.getElementById("usernameField").value;
+						socket.emit("userJoined", username);
+					}
+				}
+				else if (document.getElementById("usernameButton").innerHTML == "Exit Chat") {
+                    document.getElementById("usernameButton").innerHTML = "Enter Username";
+					socket.emit("userLeft", username);
+                    username = "";
+                }
+                
+            }
+            
+            $('#formData').submit(function (e){
+                e.preventDefault();
+                if (username == "") {
+                    console.log("pick a username");
+                }
+                else {
+                    var newChatText = document.getElementById("text").value;
+                    socket.emit('messageSent', username + ": " + newChatText);
+                }
+            });
+            
+            /*function chatMessage(e) {
+                e.preventDefault();
+                if (username == "") {
+                    console.log("pick a username");
+                }
+                else {
+                    var newChatText = document.getElementById("text").value;
+                    socket.emit('messageSent', username + ": " + newChatText);
+                }
+            }*/
+            
+            socket.on('message', function(data, newText){
+                if (data != "null") {
+                    document.getElementById("chat").innerHTML = data + "<br />" + newText;
+                }
+                else {
+                    document.getElementById("chat").innerHTML = newText;
+                }
+            });
+        </script>
+    </body>
+</html>
